@@ -61,20 +61,27 @@ class Detector():
     def __call__(self, img):
         "img should be PIL.Image (RGB), it will return dets (see readme.txt) "
 
-        img = np.array( img )[:,:,::-1] # convert to bgr 
-        img = np.float32(img)
 
-   
-        im_height, im_width, _ = img.shape
-        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
-        img -= (104, 117, 123)
-        img = img.transpose(2, 0, 1)
-        img = torch.from_numpy(img).unsqueeze(0)
+        if isinstance(img, torch.Tensor):
+            # tensor case (it must be 3*H*W) and range from [-1,1]
+            img = torch.flip(img,[0]) # flip to bgr 3*H*W
+            _, im_height, im_width = img.shape
+            img = (img*0.5+0.5)*255 - torch.tensor([ [[104]],[[117]],[[123]]])
+            img = img.unsqueeze(0)
+        else:
+            # PIL image case 
+            img = np.array( img )[:,:,::-1] # convert to bgr. Note that np.array will convert PIL image from W*H to H*W 
+            img = np.float32(img)   
+            im_height, im_width, _ = img.shape
+            img -= (104, 117, 123)
+            img = img.transpose(2, 0, 1)
+            img = torch.from_numpy(img).unsqueeze(0)
+
         img = img.to(self.device)
-        scale = scale.to(self.device)
-        
+        scale = torch.Tensor([ im_width, im_height, im_width, im_height] ).to(self.device)  
         with torch.no_grad():
             loc, conf, landms = self.net(img)  # forward pass
+
 
         priorbox = PriorBox(self.cfg, image_size=(im_height, im_width))
         priors = priorbox.forward()
@@ -116,7 +123,7 @@ class Detector():
 
 
     def draw(self, img, dets):
-        "img and dets should be input and output of __call__() function"
+        "img (must be PIL case input) and dets should be input and output of __call__() function"
 
         img_raw = np.float32(np.array( img )[:,:,::-1])
 
@@ -138,6 +145,4 @@ class Detector():
         img_raw = Image.fromarray( img_raw[:,:,::-1].astype('uint8')  )
 
         return img_raw
-
-
 
