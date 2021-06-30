@@ -22,7 +22,7 @@ Order is:
 
 Box (xyxy)
 Score
-RightEye(x,y) LeftEye(x,y) Nose(x,y) RightMouse(x,y) LeftMouse(x,y)
+RightEye(x,y) LeftEye(x,y) Nose(x,y) RightMouse(x,y) LeftMouse(x,y). Note that right and left means the face in the image, not from your point. 
 
 
 
